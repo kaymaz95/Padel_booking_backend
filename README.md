@@ -29,6 +29,7 @@ The script prints test labels and booking data. Success means it returns to the 
 | `create_booking(customer, court, start_time, duration)` | Validates the request, rejects same-court overlaps, appends a valid booking and returns its dictionary. |
 | `get_booking(customer)` | Returns the first booking matching the exact customer name; raises `ValueError` if none exists. |
 | `get_customer_bookings(customer)` | Returns a list of all exact-name matches, or `[]` if there are none. |
+| `get_bookings_by_duration(duration)` | Returns all bookings with the exact duration, or `[]` if there are none. |
 | `get_court_bookings(court)` | Returns a list of bookings for the court; raises `ValueError` if there are none. |
 | `cancel_booking(customer)` | Removes and returns the first exact-name match; raises `ValueError` if none exists. |
 
@@ -70,6 +71,7 @@ Validation, parsing and conflict checks happen before `bookings.append()`, so th
 | 9 | Accept overlapping times on different courts and check their court assignments. |
 | 10 | Reject `"25:00"` without changing state. |
 | 11 | Return two bookings for Joey, check every result's customer name, return an empty list for an unknown name and preserve state during retrieval. |
+| 12 | Return five 30-minute bookings, check every result's duration, return an empty list for duration 90 and preserve state during retrieval. |
 
 Negative checks use `try` / `except ValueError` / `else` so unexpectedly accepted requests fail. Selected checks compare the current list with a snapshot made using `bookings.copy()`. This shallow copy detects additions and removals but does not independently copy the booking dictionaries or detect every possible in-place edit.
 
@@ -87,6 +89,6 @@ The checks cover these scenarios; they do not establish exhaustive correctness o
 
 ## Learning and next steps
 
-The project exercises functions, lists and dictionaries, loops, return placement, exceptions, time arithmetic, conflict detection and state-based assertions. It was developed with AI-assisted teaching and review; the customer-booking retrieval exercise also used guidance.
+The project exercises functions, lists and dictionaries, loops, return placement, exceptions, time arithmetic, conflict detection and state-based assertions. It was developed with AI-assisted teaching and review; the customer-booking retrieval exercise also used guidance. Karl independently implemented the duration lookup and its acceptance checks, then corrected a test-variable mistake identified during review.
 
 The next planned work is a small FastAPI booking service, followed by pytest coverage and failure cases. These are separate tasks and are not implemented here.
