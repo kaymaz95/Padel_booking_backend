@@ -73,7 +73,13 @@ def get_customer_bookings(customer):
            customer_bookings.append(booking)
      return customer_bookings    
      
-          
+def get_bookings_by_duration(duration):
+     customer_bookings_byduration =[]
+     
+     for booking in bookings:
+          if booking['duration'] == duration:
+           customer_bookings_byduration.append(booking)
+     return customer_bookings_byduration    
 
     
         

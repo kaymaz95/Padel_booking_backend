@@ -5,6 +5,7 @@ from booking import get_booking
 from booking import get_court_bookings
 from booking import cancel_booking
 from booking import get_customer_bookings
+from booking import get_bookings_by_duration
 
 print("Test 1 ")
 print('-----------------------')
@@ -211,4 +212,21 @@ epmcustomerbooking = get_customer_bookings("nobody")
 print(epmcustomerbooking)
 assert len(epmcustomerbooking) == 0, "we found something"
 
+assert bookings == bookings_before, " a booking slipped through the cracks"
+
+print("Test 12")
+print('-----------------------')
+
+
+bookings_before = bookings.copy()
+
+bookingbyduration = get_bookings_by_duration(30)
+#print(bookingbyduration)
+#print(bookings_before)
+assert len(bookingbyduration) == 5, "could not find the bookings"
+for customerrtn in bookingbyduration:
+    assert customerrtn['duration'] == 30, "Something went wrong "
+
+invalidduration = get_bookings_by_duration(90)
+assert len(invalidduration) == 0, "we found something"
 assert bookings == bookings_before, " a booking slipped through the cracks"
