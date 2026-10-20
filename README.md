@@ -1,6 +1,6 @@
 # Python Padel Booking Core
 
-A small Python learning project for creating, finding and cancelling padel court bookings. It combines in-memory booking rules with executable acceptance checks, before adding an API or persistent storage.
+A small Python learning project for creating, finding and cancelling padel court bookings. It combines in-memory booking rules with executable acceptance checks, with an initial FastAPI health endpoint. Booking operations remain Python functions; HTTP booking routes and persistent storage are not implemented yet.
 
 ## Run the acceptance checks
 
@@ -21,6 +21,28 @@ python3 acceptance_check.py
 ```
 
 The script prints test labels and booking data. Success means it returns to the terminal prompt without an exception, with exit status 0. A failed assertion or unexpected exception stops execution and prints a traceback. Run in a fresh Python process each time: checks share state and depend on their order. Do not use Python's `-O` option, which disables assertions.
+
+## Run the initial API
+
+From the repository directory (Python 3.13.2 was used for the first local run):
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install "fastapi[standard]==0.150.0"
+.venv/bin/python -m uvicorn api:app --reload
+```
+
+Create the environment once; reuse it on later sessions. The explicit interpreter path avoids accidentally using a global Python command. Stop the development server with Ctrl+C.
+
+Open http://127.0.0.1:8000/health. The endpoint returns:
+
+```json
+{"status": "ok", "service": "padel-booking"}
+```
+
+`@app.get("/health")` registers the function below it for GET requests to that path. Renaming the Python function does not change the registered URL. This endpoint only proves that the application responds; it does not check dependencies or booking correctness. The development server is for local use.
+
+The first local demonstration used FastAPI 0.150.0. A full dependency lock and automated API tests have not yet been added. `.gitignore` excludes the local virtual environment and Python caches.
 
 ## Booking functions
 
@@ -84,11 +106,11 @@ The checks cover these scenarios; they do not establish exhaustive correctness o
 - Customer names are not unique booking identifiers. A customer may have multiple bookings, but single-booking lookup and cancellation act on the first matching name.
 - Input types are not explicitly enforced. Wrong types can cause exceptions other than `ValueError`, and numeric range checks do not enforce whole-number courts or durations.
 - Returned dictionaries refer to the stored booking objects, and the global list is directly accessible. Callers can bypass validation by changing them.
-- There is no database, HTTP API, user interface, authentication or concurrency protection.
+- There is no database, booking HTTP API, user interface, authentication or concurrency protection. The initial HTTP endpoint is GET /health only.
 - `main.py` still contains three-argument calls and requests without start times. It raises `TypeError` with the current booking module. Use the acceptance script to run the verified workflow.
 
 ## Learning and next steps
 
 The project exercises functions, lists and dictionaries, loops, return placement, exceptions, time arithmetic, conflict detection and state-based assertions. It was developed with AI-assisted teaching and review; the customer-booking retrieval exercise also used guidance. Karl independently implemented the duration lookup and its acceptance checks, then corrected a test-variable mistake identified during review.
 
-The next planned work is a small FastAPI booking service, followed by pytest coverage and failure cases. These are separate tasks and are not implemented here.
+The FastAPI service is in progress: GET /health has been demonstrated locally. Next is a booking retrieval endpoint using the existing domain functions, followed by request validation, booking error mapping and pytest coverage. Those capabilities are not implemented yet.
