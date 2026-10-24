@@ -1,6 +1,6 @@
 # Python Padel Booking Core
 
-A small Python learning project for creating, finding and cancelling padel court bookings. It combines in-memory booking rules with executable acceptance checks, with an initial FastAPI health endpoint. Booking operations remain Python functions; HTTP booking routes and persistent storage are not implemented yet.
+A small Python learning project for creating, finding and cancelling padel court bookings. It combines in-memory booking rules, executable acceptance checks and a local FastAPI service with booking creation and retrieval routes, request validation and a response model. Persistent storage is not implemented.
 
 ## Run the acceptance checks
 
@@ -22,7 +22,7 @@ python3 acceptance_check.py
 
 The script prints test labels and booking data. Success means it returns to the terminal prompt without an exception, with exit status 0. A failed assertion or unexpected exception stops execution and prints a traceback. Run in a fresh Python process each time: checks share state and depend on their order. Do not use Python's `-O` option, which disables assertions.
 
-## Run the initial API
+## Run the API
 
 From the repository directory (Python 3.13.2 was used for the first local run):
 
@@ -43,6 +43,69 @@ Open http://127.0.0.1:8000/health. The endpoint returns:
 `@app.get("/health")` registers the function below it for GET requests to that path. Renaming the Python function does not change the registered URL. This endpoint only proves that the application responds; it does not check dependencies or booking correctness. The development server is for local use.
 
 The first local demonstration used FastAPI 0.150.0. A full dependency lock and automated API tests have not yet been added. `.gitignore` excludes the local virtual environment and Python caches.
+
+## Booking API
+
+Interactive documentation: http://127.0.0.1:8000/docs
+
+| Method | Route | Behaviour |
+|---|---|---|
+| GET | `/health` | Returns application status and service name. |
+| POST | `/bookings` | Validates incoming booking details, creates a booking and returns it. |
+| GET | `/bookings/{customer}` | Returns the first booking matching the exact customer name. |
+
+### Create a booking
+
+Send this JSON body to POST `/bookings`:
+
+```json
+{
+  "customer": "Sarah",
+  "court": 2,
+  "start_time": "15:00",
+  "duration": 30
+}
+```
+
+All four fields are required. `BookingRequest` validates their types and limits court to 1–3 and duration to 1–60 inclusive. Start time is received as text and parsed by `create_booking()`. The domain function also rejects blank names, invalid times and same-court overlaps.
+
+Successful response: HTTP 200.
+
+```json
+{
+  "customer": "Sarah",
+  "court": 2,
+  "start_time": "1900-01-01T15:00:00",
+  "end_time": "1900-01-01T15:30:00",
+  "duration": 30,
+  "confirmed": true
+}
+```
+
+`BookingResponse` validates and serialises successful booking responses from both booking routes. The domain function calculates the end time; the response model does not.
+
+### Retrieve a booking
+
+After creation, request GET `/bookings/Sarah`.
+
+Matching is case-sensitive. An unknown customer returns HTTP 404.
+
+### Error responses
+
+| Status | Meaning in this service |
+|---|---|
+| 400 | `create_booking()` raised `ValueError`; the POST handler returns its message in `detail`. |
+| 404 | No booking matches the customer supplied to GET. |
+| 422 | Invalid JSON or a request-model validation failure, such as a missing field, invalid type or out-of-range court/duration. |
+
+Request-model validation happens before the endpoint function runs. Domain checks happen when the endpoint calls the booking function.
+
+### Manual API checks
+
+Demonstrated through `/docs`: create then retrieve a booking; reject a conflicting booking; retain the original booking after rejection; reject missing duration, non-numeric duration and out-of-range values; accept a 60-minute booking; and display the structured response example.
+
+These are manual checks. Automated API tests have not yet been added.
+
 
 ## Booking functions
 
@@ -104,13 +167,14 @@ The checks cover these scenarios; they do not establish exhaustive correctness o
 - All bookings live in a module-level list. They are lost when the Python process stops; a fresh process starts with an empty list.
 - No booking dates are accepted. Parsing a time supplies the default date of 1 January 1900. Date-based scheduling and reliable cross-midnight conflict handling are not implemented.
 - Customer names are not unique booking identifiers. A customer may have multiple bookings, but single-booking lookup and cancellation act on the first matching name.
-- Input types are not explicitly enforced. Wrong types can cause exceptions other than `ValueError`, and numeric range checks do not enforce whole-number courts or durations.
+- HTTP requests use Pydantic type validation and numeric constraints; compatible values may be converted rather than strictly rejected. Direct calls to the Python booking functions do not have that model validation and can still fail on unsuitable types.
 - Returned dictionaries refer to the stored booking objects, and the global list is directly accessible. Callers can bypass validation by changing them.
-- There is no database, booking HTTP API, user interface, authentication or concurrency protection. The initial HTTP endpoint is GET /health only.
+- There is no database, dedicated user interface, authentication or concurrency protection. Booking creation and retrieval are exposed over HTTP; the other booking operations remain Python functions.
+- Separate Python processes have separate in-memory booking lists. Running acceptance checks does not populate the API server. Restarting or reloading the server clears its bookings.
 - `main.py` still contains three-argument calls and requests without start times. It raises `TypeError` with the current booking module. Use the acceptance script to run the verified workflow.
 
 ## Learning and next steps
 
 The project exercises functions, lists and dictionaries, loops, return placement, exceptions, time arithmetic, conflict detection and state-based assertions. It was developed with AI-assisted teaching and review; the customer-booking retrieval exercise also used guidance. Karl independently implemented the duration lookup and its acceptance checks, then corrected a test-variable mistake identified during review.
 
-The FastAPI service is in progress: GET /health has been demonstrated locally. Next is a booking retrieval endpoint using the existing domain functions, followed by request validation, booking error mapping and pytest coverage. Those capabilities are not implemented yet.
+The FastAPI service supports health checks, booking creation and exact-name retrieval, request field constraints, booking error mapping and a shared booking response model. Next is the final service review, followed by pytest coverage under the separate testing work item.
