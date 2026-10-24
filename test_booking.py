@@ -16,4 +16,6 @@ def test_create_booking_is_confirmed():
     function_under_test = create_booking("Karl", 1, "14:00", 30)
     assert function_under_test["confirmed"] == True
 
-    
+def test_create_booking_rejects_invalid_duration():
+    with pytest.raises(ValueError):
+        create_booking("paul",1,"14:00",70)
