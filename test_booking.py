@@ -19,3 +19,16 @@ def test_create_booking_is_confirmed():
 def test_create_booking_rejects_invalid_duration():
     with pytest.raises(ValueError):
         create_booking("paul",1,"14:00",70)
+    assert len(bookings) == 0
+
+def test_create_booking_rejects_invalid_court():
+    with pytest.raises(ValueError):
+        create_booking("paul",4,"14:00",60)
+    assert len(bookings) == 0
+
+def test_create_booking_rejects_overlap():
+    create_booking("Karl",1,"14:00",60)
+    with pytest.raises(ValueError):
+        create_booking("Sarah",1,"14:00",60)
+    assert len(bookings) == 1
+    assert bookings[0]["customer"] == "Karl"
